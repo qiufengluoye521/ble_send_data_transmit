@@ -1,0 +1,114 @@
+ close all;
+clear all;
+clc;
+
+%a = xlsread('lihongbo_run2.xlsx');
+string_name = 'get_data20170823155144';
+fid = fopen([string_name,'.txt']);
+read_txt = textscan(fid, '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s','EmptyValue', -Inf);
+fclose(fid);
+
+
+tmp_1 = read_txt{1};        % time
+tmp_2 = read_txt{2};        % polar hr_value
+tmp_3 = read_txt{3};        % hr_value     
+tmp_4 = read_txt{4};        % x1
+tmp_5 = read_txt{5};        % y1
+tmp_6 = read_txt{6};        % z1
+tmp_7 = read_txt{7};        % x2
+tmp_8 = read_txt{8};        % y2
+tmp_9 = read_txt{9};        % z2
+tmp_10 = read_txt{10};      % x3
+tmp_11 = read_txt{11};      % y3
+tmp_12 = read_txt{12};      % z3
+tmp_13 = read_txt{13};      % x4
+tmp_14 = read_txt{14};      % y4
+tmp_15 = read_txt{15};      % z4
+tmp_16 = read_txt{16};      % ppg1_high
+tmp_17 = read_txt{17};      % ppg1_low
+tmp_18 = read_txt{18};      % ppg2_high
+tmp_19 = read_txt{19};      % ppg2_low
+tmp_20 = read_txt{20};
+tmp_21 = read_txt{21};      
+tmp_22 = read_txt{22};      % serial num
+
+
+
+tmp = [tmp_1,tmp_2,tmp_3,tmp_4,tmp_5,tmp_6,tmp_7,tmp_8,tmp_9,tmp_10, ...
+    tmp_11,tmp_12,tmp_13,tmp_14,tmp_15,tmp_16,tmp_17,tmp_18,tmp_19,tmp_20,tmp_21,tmp_22];
+
+row_num = find(~strcmp(tmp_22,''));
+tmp_valid = tmp(row_num,:);
+
+%hr_value polar
+hr_value_polar = tmp_valid(:,2);
+hr_value_polar_num = hex2dec(hr_value_polar);
+
+%hr_value wrist
+hr_value_wrist = tmp_valid(:,3);
+hr_value_wrist_num = hex2dec(hr_value_wrist);
+
+% gsensor 
+gsensor_x = [tmp_valid(:,4),tmp_valid(:,7),tmp_valid(:,10),tmp_valid(:,13)];
+gsensor_y = [tmp_valid(:,5),tmp_valid(:,8),tmp_valid(:,11),tmp_valid(:,14)];
+gsensor_z = [tmp_valid(:,6),tmp_valid(:,9),tmp_valid(:,12),tmp_valid(:,15)];
+
+gsensor_x_num = hex2dec(gsensor_x');
+gsensor_y_num = hex2dec(gsensor_y');
+gsensor_z_num = hex2dec(gsensor_z');
+len_gsensor_num  = length(gsensor_x_num(:,1));
+
+% ppg
+ppg1 = [tmp_valid(:,16),tmp_valid(:,17)];
+ppg2 = [tmp_valid(:,18),tmp_valid(:,19)];
+
+pp1_com = strcat(ppg1(:,1),ppg1(:,2));
+pp2_com = strcat(ppg2(:,1),ppg2(:,2));
+pp1_num = hex2dec(pp1_com);
+pp2_num = hex2dec(pp2_com);
+ppg_num = [pp1_num,pp2_num];
+len_ppg_num = length(ppg_num);
+ppg_reshape = reshape(ppg_num',len_ppg_num*2,1);
+
+
+figure(1);
+t_gsensor = 1:1:len_gsensor_num;
+plot(t_gsensor,gsensor_x_num,'r.-');
+hold on;
+plot(t_gsensor,gsensor_y_num,'g.-');
+hold on;
+plot(t_gsensor,gsensor_z_num,'b.-');
+
+figure(2);
+len_ppg_reshape = length(ppg_reshape);
+t_ppg_reshape = 1:1:len_ppg_reshape;
+plot(t_ppg_reshape,ppg_reshape,'g.-');
+
+figure(3);
+plot(hr_value_polar_num,'r.-');
+hold on;
+plot(hr_value_wrist_num,'b.-');
+
+% Êý¾Ý´æ´¢
+aac_data = (gsensor_x_num-128).*(gsensor_x_num-128) + (gsensor_y_num-128) ...
+    .* (gsensor_y_num-128) + (gsensor_z_num-100) .* (gsensor_z_num-100);
+acc_data_sqrt = sqrt(aac_data);
+
+acc_data_sqrt_int = floor(acc_data_sqrt);
+len_acc_data_sqrt_int = length(acc_data_sqrt_int);
+acc_data_sqrt_int_reshape = reshape(acc_data_sqrt_int,2,len_acc_data_sqrt_int/2);
+acc_data_sqrt_int_reshape = acc_data_sqrt_int_reshape';
+
+data_out = [ppg_reshape,acc_data_sqrt_int_reshape(:,1)];
+dlmwrite('ppg_gsensor_raw_data.txt', data_out,'delimiter','\t');
+
+data_out2 = [hr_value_polar_num,hr_value_wrist_num];
+dlmwrite('hr_polar_wrist_data.txt', data_out2,'delimiter','\t');
+
+
+
+
+%plot(t_fft_time,fft_time);
+%hold on;
+
+
